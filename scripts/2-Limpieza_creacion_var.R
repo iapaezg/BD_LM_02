@@ -239,10 +239,137 @@ hist(db_ps$bano_f)
 ls(db_ps)
 # area_f asc_f bano_f bed_f dep_f ext_f par_f property_type sample
 
-# Inicia Melissa -----
 
+# Melissa
+
+#Verificar si alguna de las propiedadno tiene coordenadas
 filtro_nocord<- is.na(db_ps$geometry) 
 sum(is.na(db_ps$geometry))
+print(db_ps)
+glimpse(db_ps)
+
+##Ubicar los puntos en los que se encuentran los parques
+available_tags("leisure")
+parques <- opq(bbox=getbb("Bogotá Colombia")) %>%
+  add_osm_feature(key="leisure",value="park")
+print(parques)
+
+parques_sf <- osmdata_sf(parques)
+parques_geometria <- parques_sf$osm_polygons %>%
+  select(osm_id,name)
+print(parques_sf)
+
+#Mapa de la ubicación de los parques
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=parques_geometria,col="green",
+              opacity=0.8,popup=parques_geometria$name)
+db_ps <- st_as_sf(db_ps,coords=c("lon","lat"))
+
+#Determinar los centroides de los parques
+centroides_parques <- gCentroid(as(parques_geometria$geometry,"Spatial"),byid=FALSE)
+centroides_sf_parques <- st_as_sf(centroides_parques,coords=c("x","y"))
+
+#Medir las distancias de las propiedades a los parques
+dist_matrix_parques <- st_distance(x=db_ps,y=centroides_sf_parques)
+dim(dist_matrix_parques)
+db_ps$distancia_minima_parque <- apply(dist_matrix,1,min)
+
+view(db_ps$distancia_minima_parque)
+ls(db_ps)
+
+
+##Ubicar los puntos en los que se encuentran los hospitales
+available_tags("amenity")
+hospitales <- opq(bbox=getbb("Bogotá Colombia")) %>%
+  add_osm_feature(key="amenity",value="hospital")
+
+hospitales_sf <- osmdata_sf(hospitales)
+hospitales_geometria <- hospitales_sf$osm_polygons %>%
+  select(osm_id,)
+print(hospitales_sf)
+
+# Mapa de la ubicación de los hospitales 
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=hospitales_geometria,col="green",
+              opacity=0.8)
+
+#Determinar los centroides de los hospitales
+centroides_hospitales <- gCentroid(as(hospitales_geometria$geometry,"Spatial"),byid=FALSE)
+centroides_sf_hospitales <- st_as_sf(centroides_hospitales,coords=c("x","y"))
+
+dist_matrix_hospitales <- st_distance(x=db_ps,y=centroides_sf_hospitales)
+dim(dist_matrix_hospitales)
+db_ps$distancia_minima_hospitales <- apply(dist_matrix_hospitales,1,min)
+
+view(db_ps$distancia_minima_hospitales)
+ls(db_ps)
+
+
+##Ubicar los puntos en los que se encuentran las estaciones de buses - Nota: OSM saca estacion de bus como estacion de transmilenio
+
+estacion_bus <- opq(bbox=getbb("Bogotá Colombia")) %>%
+  add_osm_feature(key="amenity",value="bus_station")
+
+estacion_bus_sf <- osmdata_sf(estacion_bus)
+estacion_bus_geometria <- estacion_bus_sf$osm_polygons %>%
+  select(osm_id,)
+
+# Mapa de la ubicación de las estaciones de bus
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=estacion_bus_geometria,col="green",
+              opacity=0.8)
+
+#Determinar los centroides de las estaciones de bus
+centroides_estacion_bus <- gCentroid(as(estacion_bus_geometria$geometry,"Spatial"),byid=FALSE)
+centroides_sf_estacion_bus <- st_as_sf(centroides_estacion_bus,coords=c("x","y"))
+
+dist_matrix_estacion_bus <- st_distance(x=db_ps,y=centroides_sf_estacion_bus)
+dim(dist_matrix_estacion_bus)
+db_ps$distancia_minima_estacion_bus <- apply(dist_matrix_estacion_bus,1,min)
+
+
+##Ubicar los puntos en los que se encuentran las universidades
+
+universidades <- opq(bbox=getbb("Bogotá Colombia")) %>%
+  add_osm_feature(key="amenity",value="university")
+
+universidades_sf <- osmdata_sf(universidades)
+universidades_geometria <- universidades_sf$osm_polygons %>%
+  select(osm_id,)
+
+# Mapa de la ubicación de las universidades 
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=universidades_geometria,col="green",
+              opacity=0.8)
+
+#Determinar los centroides de las universidades
+centroides_universidades <- gCentroid(as(universidades_geometria$geometry,"Spatial"),byid=FALSE)
+centroides_sf_universidades <- st_as_sf(centroides_universidades,coords=c("x","y"))
+
+dist_matrix_universidades <- st_distance(x=db_ps,y=centroides_sf_universidades)
+dim(dist_matrix_universidades)
+db_ps$distancia_minima_universidades <- apply(dist_matrix_universidades,1,min)
+
+
+predic_ext <- db_ps %>%
+  select(distancia_minima_universidades, distancia_minima_parque, distancia_minima_hospitales, distancia_minima_estacion_bus,)
+
+print(predic_ext)
+ls(db_ps)
+
+
+
+
+
+
+
+
+
+
 
 
 # Distancia del centro internacional
@@ -256,31 +383,4 @@ db_ps  %>% st_drop_geometry() %>% group_by(sample)  %>% summarize(mean(DCBD))
 
 head(db_ps)
 summary(db_ps$DCBD)
-
-
-##Medir las distancias desde los parques
-
-available_tags("leisure")
-parques <- opq(bbox=getbb("Bogotá Colombia")) %>%
-  add_osm_feature(key="leisure",value="park")
-
-parques_sf <- osmdata_sf(parques)
-parques_geometria <- parques_sf$osm_polygons %>%
-  select(osm_id,name)
-
-leaflet() %>%
-  addTiles() %>%
-  addPolygons(data=parques_geometria,col="green",
-              opacity=0.8,popup=parques_geometria$name)
-db_ps <- st_as_sf(db,coords=c("lon","lat"))
-
-centroides <- gCentroid(as(parques_geometria$geometry,"Spatial"),byid=FALSE)
-centroides_sf <- st_as_sf(centroides,coords=c("x","y"))
-
-dist_matrix <- st_distance(x=db_ps,y=centroides_sf)
-dim(dist_matrix)
-db_ps$distancia_minima <- apply(dist_matrix,1,min)
-
-view(db_ps$distancia_minima)
-
 
