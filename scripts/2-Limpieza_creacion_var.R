@@ -18,7 +18,7 @@ require("sf")
 require("devtools")
 require(skimr)
 require(stringr)
-p_load(skimr,pacman,tidyverse,sf,devtools,leaflet,rio,osmdata,rgeos)
+p_load(skimr,pacman,tidyverse,sf,devtools,leaflet,rio,osmdata,rgeos,vtable,stargazer,spatialsample)
 
 
 # Carga datos -------------------------------------------------------------
@@ -240,9 +240,9 @@ ls(db_ps)
 # area_f asc_f bano_f bed_f dep_f ext_f par_f property_type sample
 
 
-# Melissa
+# Creación de variables externas -----------------------------------------------------------------------------------------------
 
-#Verificar si alguna de las propiedadno tiene coordenadas
+#Verificar si alguna de las propiedades no tiene coordenadas
 filtro_nocord<- is.na(db_ps$geometry) 
 sum(is.na(db_ps$geometry))
 print(db_ps)
@@ -273,7 +273,7 @@ centroides_sf_parques <- st_as_sf(centroides_parques,coords=c("x","y"))
 #Medir las distancias de las propiedades a los parques
 dist_matrix_parques <- st_distance(x=db_ps,y=centroides_sf_parques)
 dim(dist_matrix_parques)
-db_ps$distancia_minima_parque <- apply(dist_matrix,1,min)
+db_ps$distancia_minima_parque <- apply(dist_matrix_parques,1,min)
 
 view(db_ps$distancia_minima_parque)
 ls(db_ps)
@@ -354,19 +354,66 @@ dist_matrix_universidades <- st_distance(x=db_ps,y=centroides_sf_universidades)
 dim(dist_matrix_universidades)
 db_ps$distancia_minima_universidades <- apply(dist_matrix_universidades,1,min)
 
-
+#Variables externas finales -----------------------------------------------------------
 predic_ext <- db_ps %>%
   select(distancia_minima_universidades, distancia_minima_parque, distancia_minima_hospitales, distancia_minima_estacion_bus,)
 
 print(predic_ext)
 ls(db_ps)
 
+## Prediccion del precio de las propiedades
+
+modelo_1<-db_ps %>% select(price, area_f, asc_f, bano_f, bed_f, dep_f, par_f, ext_f, property_type, distancia_minima_estacion_bus, distancia_minima_hospitales, distancia_minima_parque, distancia_minima_universidades, sample)
+glimpse (modelo_1)
+modelo_1_sf <- st_as_sf(modelo_1,coords=c("lon","lat"), crs = 4326)
+
+reg1 <-lm(log(price) ~ area_f + asc_f + bano_f + bed_f + dep_f + par_f + ext_f + property_type + distancia_minima_estacion_bus + distancia_minima_hospitales + distancia_minima_parque + distancia_minima_universidades, data = modelo_1)
+stargazer(reg1,type="text")
 
 
+#Correccion de la correlacion espacial
+
+test<- modelo_1_sf  %>% filter(sample=="test")
+train<-modelo_1_sf  %>% filter(sample=="train")
+     
+
+### Hasta aqui lo saque
+
+set.seed(123)
+location_folds_train <- 
+  spatial_leave_location_out_cv(
+    train,
+    group = modelo_1_sf$sample
+  )
 
 
+autoplot(location_folds_train)
+
+folds_train<-list()
+for(i in 1:length(location_folds_train$splits)){
+  folds_train[[i]]<- location_folds_train
+in_id
+}
 
 
+fitControl_tp<-trainControl(method ="cv",
+                         number=5)
+
+#Implementacion de elastic net
+EN_tp<-train(reg1,
+		 data=modelo_1_sf,
+             method = 'glmnet', 
+             trControl = fitControl_tp,
+             metric="MAE",
+             tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
+                                    lambda = seq(0.001,0.2,length.out = 50))
+              ) 
+
+#Creacion de buffers a traves de cv
+set.seed(123)
+buffer_folds <- spatial_buffer_vfold_cv(modelo_1_sf, radius=40,buffer=5)
+
+autoplot(buffer_folds)
 
 
 
