@@ -97,7 +97,7 @@ db_ps <- db_ps %>% # Se escoge el valor máximo de las tres variables
 boxplot(db_ps$area_f)
 
 
-# Bañño var discont -------------------------------------------------------
+# Baño var discont -------------------------------------------------------
 
 # Extraer para visualizar baños
 b_select <- str_extract(db_ps$description, "\\s? [0-9]+ ba[^lsrh][^cd]")
@@ -234,6 +234,10 @@ db_ps <- db_ps %>% # Se escoge el valor máximo de las variables y se toma un co
 skim(db_ps)
 hist(db_ps$bano_f)
 
+
+# Variables finales internas -------------------------------------------------
+ls(db_ps)
+# area_f asc_f bano_f bed_f dep_f ext_f par_f property_type sample
 
 # Inicia Melissa -----
 
