@@ -217,24 +217,6 @@ db_ps <- db_ps %>%
   mutate(par_dp=str_detect(db_ps$description,"parqu?e?a?deros?")) %>%
   mutate(par_f=ifelse((gar_dp==TRUE | par_dp==TRUE),1,0))
 
-
-
-
-
-db_ps <- db_ps %>% 
-  mutate(bano_d1=str_extract(b_select,"[0-9]+")) %>% 
-  mutate(bano_d2=str_count(db_ps$description, "ba[^lsrh][^cd]"))
-db_ps$bano_d1 <- as.numeric(db_ps$bano_d1)
-db_ps$bano_d2 <- as.numeric(db_ps$bano_d2)
-skim(db_ps)
-table(db_ps$bano_d1)
-db_ps <- db_ps %>% # Se escoge el valor máximo de las variables y se toma un corte de 20 baños luego de inspeccion
-  mutate(bano_f=pmax(db_ps$bano_d1,db_ps$bano_d2,db_ps$bathrooms,na.rm = TRUE)) %>% 
-  mutate(bano_f=ifelse(bano_f>20,pmax(db_ps$bano_d2,db_ps$bathrooms,na.rm = TRUE),db_ps$bano_f)) 
-skim(db_ps)
-hist(db_ps$bano_f)
-
-
 # Variables finales internas -------------------------------------------------
 ls(db_ps)
 # area_f asc_f bano_f bed_f dep_f ext_f par_f property_type sample
@@ -307,7 +289,8 @@ view(db_ps$distancia_minima_hospitales)
 ls(db_ps)
 
 
-##Ubicar los puntos en los que se encuentran las estaciones de buses - Nota: OSM saca estacion de bus como estacion de transmilenio
+##Ubicar los puntos en los que se encuentran las estaciones de buses - 
+##Nota: OSM saca estacion de bus como estacion de transmilenio
 
 estacion_bus <- opq(bbox=getbb("Bogotá Colombia")) %>%
   add_osm_feature(key="amenity",value="bus_station")
@@ -361,31 +344,44 @@ predic_ext <- db_ps %>%
 print(predic_ext)
 ls(db_ps)
 
-## Prediccion del precio de las propiedades
-
-modelo_1<-db_ps %>% select(price, area_f, asc_f, bano_f, bed_f, dep_f, par_f, ext_f, property_type, distancia_minima_estacion_bus, distancia_minima_hospitales, distancia_minima_parque, distancia_minima_universidades, sample)
+## Base final para análisis --------
+modelo_1<-db_ps %>%
+  select(price, area_f, asc_f, bano_f, bed_f, dep_f, par_f, ext_f, property_type,
+         distancia_minima_estacion_bus, distancia_minima_hospitales,
+         distancia_minima_parque, distancia_minima_universidades, sample,
+         geometry)
 glimpse (modelo_1)
+skim(modelo_1)
 modelo_1_sf <- st_as_sf(modelo_1,coords=c("lon","lat"), crs = 4326)
+
+
+# UPZ Bogota --------------------------------------------------------------
+# Se obtiene la informacion de UPZ de Bogotá de IDECA
+upz <- sf::st_read("../stores/upz-bogota.shp") %>% 
+  st_transform(4326)
+todos_upz <- st_join(modelo_1_sf,upz,join=st_within)
+glimpse(todos_upz)
+skim(todos_upz)
+
+modelo_1_sf <- todos_upz
 
 reg1 <-lm(log(price) ~ area_f + asc_f + bano_f + bed_f + dep_f + par_f + ext_f + property_type + distancia_minima_estacion_bus + distancia_minima_hospitales + distancia_minima_parque + distancia_minima_universidades, data = modelo_1)
 stargazer(reg1,type="text")
-
 
 #Correccion de la correlacion espacial
 
 test<- modelo_1_sf  %>% filter(sample=="test")
 train<-modelo_1_sf  %>% filter(sample=="train")
-     
 
-### Hasta aqui lo saque
+
+# CrossValidation ---------------------------------------------------------
 
 set.seed(123)
 location_folds_train <- 
   spatial_leave_location_out_cv(
     train,
-    group = modelo_1_sf$sample
+    group = train$nom_upz
   )
-
 
 autoplot(location_folds_train)
 
