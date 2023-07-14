@@ -112,7 +112,8 @@ db_ps$bano_d1 <- as.numeric(db_ps$bano_d1)
 db_ps$bano_d2 <- as.numeric(db_ps$bano_d2)
 skim(db_ps)
 table(db_ps$bano_d1)
-db_ps <- db_ps %>% # Se escoge el valor máximo de las variables y se toma un corte de 20 baños luego de inspeccion
+db_ps <- db_ps %>% # Se escoge el valor máximo de las variables y se toma un corte
+                  # de 20 baños luego de inspeccion
   mutate(bano_f=pmax(db_ps$bano_d1,db_ps$bano_d2,db_ps$bathrooms,na.rm = TRUE))
 db_ps <- db_ps %>%
   mutate(bano_f=ifelse(bano_f>20,pmax(db_ps$bano_d2,db_ps$bathrooms,na.rm = TRUE),db_ps$bano_f)) 
@@ -206,7 +207,7 @@ db_ps <- db_ps %>%
 
 # Exterior var dummy ----------------------------------------------------
 
-# Se crea la variable dummy GARAJE = terraza patio balcon
+# Se crea la variable dummy GARAJE/ parqueadero = terraza patio balcon
 gar <- str_extract(db_ps$description,"gara[gj]es?")
 gar
 par <- str_extract(db_ps$description,"parqu?e?a?deros?")

@@ -14,11 +14,14 @@ train <- read_csv("https://github.com/iapaezg/BD_LM_02/raw/main/stores/train.csv
 head(test)
 str(test)
 
-# Se cre la variable sample
+head(train)
+str(train)
+
+# Se crea la variable sample
 test<-test  %>% mutate(sample="test")
 train<-train  %>% mutate(sample="train")
 
-# Unir bases
+# Unir bases: test y train
 db_ps<-rbind(test,train)
 table(db_ps$sample)
 
