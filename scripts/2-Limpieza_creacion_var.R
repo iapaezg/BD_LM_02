@@ -390,6 +390,8 @@ glimpse(upz_df)
 ls(upz_df)
 skim(upz_df)
 
+### Prueba
+
 # Buffer ------------------------------------------------------------------
 # Se desarrollará LLOCV por UPZ
 set.seed(2023)
