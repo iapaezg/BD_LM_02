@@ -390,7 +390,9 @@ glimpse(upz_df)
 ls(upz_df)
 skim(upz_df)
 
-### Prueba
+# Se eliminan observaciones que pueden ubicarse en UPZ
+upz_df <- upz_df %>% 
+  filter(!is.na(cod_loc))
 
 # Buffer ------------------------------------------------------------------
 # Se desarrollará LLOCV por UPZ
@@ -399,6 +401,9 @@ df_train <- upz_df %>%
   filter(sample=="train")
 df_test <- upz_df %>% 
   filter(sample=="test")
+
+glimpse(df_train)
+skim(df_train)
 
 # Se hace LLOCV para train
 location_folds <- spatial_leave_location_out_cv( #Divide la meustra en grupos de igual tamaño
@@ -418,13 +423,12 @@ fitControl_tp<-trainControl(method ="cv",
                             number=5)
 ls(df_train)
 skim(df_train)
-EN_tp<-train(log(price) ~ bano_f + bed_f + property_type + 
+EN_tp<-train(log(price) ~ area_f + bano_f + bed_f + property_type + 
                distancia_minima_estacion_bus + distancia_minima_hospitales + 
                distancia_minima_parque + distancia_minima_universidades,
              data=df_train,
              method = 'glmnet', 
              trControl = fitControl_tp,
-             na.action= na.omit,
              metric="MAE",
              tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
                                     lambda = seq(0.001,0.2,length.out = 50))
