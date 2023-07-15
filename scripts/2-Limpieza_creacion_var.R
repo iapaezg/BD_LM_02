@@ -1,17 +1,18 @@
 rm(list = ls())
-install.packages("rio")
-install.packages("pacman")
-install.packages("tidyverse")
-install.packages("sf")
-install.packages(leaflet)
-install.packages("osmdata")
-install.packages("osmdata_sf")
-install.packages("rgeos")
-install.packages("devtools")
-install.packages("skimr")
-install.packages("stringr")
+#install.packages("rio")
+#install.packages("pacman")
+#install.packages("tidyverse")
+#install.packages("sf")
+#install.packages(leaflet)
+#install.packages("osmdata")
+#install.packages("osmdata_sf")
+#install.packages("rgeos")
+#install.packages("devtools")
+#install.packages("skimr")
+#install.packages("stringr")
 require("rgeos")
 require("osmdata")
+require("osmdata_sf")
 require("leaflet")
 require("pacman")
 require("tidyverse")
@@ -19,8 +20,13 @@ require("sf")
 require("devtools")
 require(skimr)
 require(stringr)
+require(ggplot2)
 p_load(skimr,pacman,tidyverse,sf,devtools,leaflet,rio,osmdata,rgeos,vtable,stargazer,spatialsample)
 
+# Corrida paralelo
+p_load(doParallel)
+detectCores()
+registerDoParallel(2)
 
 # Carga datos -------------------------------------------------------------
 
@@ -36,32 +42,6 @@ train<-train  %>% mutate(sample="train")
 # Unir bases
 db_ps<-rbind(test,train)
 table(db_ps$sample)
-
-
-# Cargar mapas ------------------------------------------------------------
-
-db_ps <- st_as_sf(
-  db_ps,
-  # "coords" is in x/y order -- so longitude goes first!
-  coords = c("lon", "lat"),
-  # Set our coordinate reference system to EPSG:4326,
-  # the standard WGS84 geodetic coordinate reference system
-  crs = 4326
-)
-st_crs(db_ps) <- 4326
-
-pal <- colorFactor(
-  palette = c('red', 'green'),
-  domain = db_ps$sample
-)
-
-map<-leaflet() %>% 
-  addTiles() %>%  #capa base
-  addCircles(data=db_ps,col=~pal(sample)) #capa casas
-map 
-
-glimpse(db_ps)
-
 
 # Limpieza de texto -------------------------------------------------------
 
@@ -223,6 +203,49 @@ db_ps <- db_ps %>%
 ls(db_ps)
 # area_f asc_f bano_f bed_f dep_f ext_f par_f property_type sample
 
+# Se imputan los valores area para NA tomando la media de cada muestra
+db <- db_ps
+db %>% select(sample,area_f) %>% tail()
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(media_area = mean(area_f,na.rm=T))
+db <-  db %>%
+  mutate(area_f = ifelse(test = is.na(area_f)==T,
+                         yes = media_area,
+                         no = area_f))
+db %>% select(sample,area_f,media_area) %>% tail()
+skim(db)
+
+# Se elimina NA menor 1%
+db <- db %>% 
+  filter(!(is.na(asc_f)))
+db <- db %>% 
+  filter(!(is.na(bed_f)))
+
+db_ps <- db
+
+# Cargar mapas ------------------------------------------------------------
+db_ps <- st_as_sf(
+  db_ps,
+  # "coords" is in x/y order -- so longitude goes first!
+  coords = c("lon", "lat"),
+  # Set our coordinate reference system to EPSG:4326,
+  # the standard WGS84 geodetic coordinate reference system
+  crs = 4326
+)
+st_crs(db_ps) <- 4326
+
+pal <- colorFactor(
+  palette = c('red', 'green'),
+  domain = db_ps$sample
+)
+
+map<-leaflet() %>% 
+  addTiles() %>%  #capa base
+  addCircles(data=db_ps,col=~pal(sample)) #capa casas
+map 
+
+glimpse(db_ps)
 
 # Creación de variables externas -----------------------------------------------------------------------------------------------
 
@@ -347,23 +370,71 @@ print(predic_ext)
 ls(db_ps)
 
 ## Base final para análisis --------
-modelo_1<-db_ps %>%
+data_final<-db_ps %>%
   select(price, area_f, asc_f, bano_f, bed_f, dep_f, par_f, ext_f, property_type,
          distancia_minima_estacion_bus, distancia_minima_hospitales,
          distancia_minima_parque, distancia_minima_universidades, sample,
          geometry)
-glimpse (modelo_1)
-skim(modelo_1)
-modelo_1_sf <- st_as_sf(modelo_1,coords=c("lon","lat"), crs = 4326)
+glimpse (data_final)
+skim(data_final)
 
+df_sf <- st_as_sf(data_final,coords=c("lon","lat"), crs = 4326)
 
 # UPZ Bogota --------------------------------------------------------------
 # Se obtiene la informacion de UPZ de Bogotá de IDECA
+getwd()
 upz <- sf::st_read("../stores/upz-bogota.shp") %>% 
   st_transform(4326)
-todos_upz <- st_join(modelo_1_sf,upz,join=st_within)
-glimpse(todos_upz)
-skim(todos_upz)
+upz_df <- st_join(df_sf,upz,join=st_within)
+glimpse(upz_df)
+ls(upz_df)
+skim(upz_df)
+
+# Buffer ------------------------------------------------------------------
+# Se desarrollará LLOCV por UPZ
+set.seed(2023)
+df_train <- upz_df %>% 
+  filter(sample=="train")
+df_test <- upz_df %>% 
+  filter(sample=="test")
+
+# Se hace LLOCV para train
+location_folds <- spatial_leave_location_out_cv( #Divide la meustra en grupos de igual tamaño
+  df_train,
+  group=nom_upz
+)
+autoplot(location_folds)
+
+p_load("purrr")
+p_load(caret)
+
+folds_train<-list()
+for(i in 1:length(location_folds$splits)){
+  folds_train[[i]]<- location_folds$splits[[i]]$in_id
+}
+fitControl_tp<-trainControl(method ="cv",
+                            number=5)
+ls(df_train)
+skim(df_train)
+EN_tp<-train(log(price) ~ bano_f + bed_f + property_type + 
+               distancia_minima_estacion_bus + distancia_minima_hospitales + 
+               distancia_minima_parque + distancia_minima_universidades,
+             data=df_train,
+             method = 'glmnet', 
+             trControl = fitControl_tp,
+             na.action= na.omit,
+             metric="MAE",
+             tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
+                                    lambda = seq(0.001,0.2,length.out = 50))
+)
+
+require("pacman")
+p_load("tidyverse", #data wrangling
+       "modeldata", # package with the housing data from Ames, Iowa
+       "vtable", #descriptive stats package
+       "stargazer", #tidy regression results,
+       "sf", #handling spatial data
+       "spatialsample") #spatial CV
 
 modelo_1_sf <- todos_upz
 
