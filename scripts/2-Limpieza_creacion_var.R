@@ -652,6 +652,194 @@ exp(0.2964306)
 MAPE(y_pred=y_hat_insample4,y_true=log(df_train$price))
 #0.01462549
 
+# Model 5 --------
+reg5 <- lm(log(price) ~ asc_f + ext_f + factor(bano_f) + factor(bed_f) + 
+             property_type + distancia_minima_estacion_bus + 
+             distancia_minima_hospitales + 
+             distancia_minima_parque + distancia_minima_universidades,
+           data=df_train)
+stargazer(reg5,type="text")
+str(reg5)
+df_test$log_price_hat5 <- predict(reg5,newdata=df_test)
+head(df_test %>% select(log_price_hat5) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_hat5=exp(log_price_hat5)) %>% 
+  mutate(price_hat5=round(price_hat5,-5))
+head(df_test %>% select(log_price_hat5,price_hat5) %>% st_drop_geometry())
+
+intento5 <- df_test %>% 
+  select(property_id,price_hat5) %>% 
+  rename(price=price_hat5) %>% 
+  st_drop_geometry()
+write.csv(intento5,"intento5.csv",row.names = FALSE)
+
+# Calcular MAE MAPE
+y_hat_insample5 <- predict(reg5,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample5,y_true=log(df_train$price))
+#0.2655674
+exp(0.2655674)
+#1.304171
+MAPE(y_pred=y_hat_insample5,y_true=log(df_train$price))
+#0.01310394
+
+# Arboles -----
+require("pacman")
+p_load("tidyverse","ggplot2")
+p_load("caret")
+fitControl <- trainControl(method="cv", number=5)
+set.seed(2023)
+
+## Arbol 1 (10) ----
+ls(df_train)
+tree <- train(
+  log(price) ~ asc_f + ext_f + factor(bano_f) + factor(bed_f) + 
+    property_type + distancia_minima_estacion_bus + 
+    distancia_minima_hospitales + 
+    distancia_minima_parque + distancia_minima_universidades,
+  data=df_train,
+  method = "rpart",
+  metric="MAE",
+  trControl = fitControl,
+  tuneLength=10
+)
+tree
+# Predecir el precio
+df_test$tree_logprice1 <- predict(tree,df_test)
+df_test <- df_test %>% 
+  st_drop_geometry()  %>%
+  mutate(pt_1=exp(tree_logprice1)) %>% 
+  mutate(pt_1=round(pt_1,-5))
+int_tree1 <- df_test %>%
+  ungroup() %>% 
+  select(property_id,pt_1) %>% 
+  rename(price=pt_1)
+write.csv(int_tree1,"intento6.csv",row.names = FALSE)
+# MAE / MAPE
+y_hat_insample6 <- predict(tree,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample6,y_true=log(df_train$price))
+#0.2807288
+exp(0.2807288)
+#1.324094
+MAPE(y_pred=y_hat_insample6,y_true=log(df_train$price))
+#0.01385536
+
+# Mirar árboles bonitos
+p_load(rattle)
+tree$finalModel
+fancyRpartPlot(tree$finalModel)
+
+## Arbol 2 (50) ----
+ls(df_train)
+tree2 <- train(
+  log(price) ~ asc_f + ext_f + factor(bano_f) + factor(bed_f) + 
+    property_type + distancia_minima_estacion_bus + 
+    distancia_minima_hospitales + 
+    distancia_minima_parque + distancia_minima_universidades,
+  data=df_train,
+  method = "rpart",
+  metric="MAE",
+  trControl = fitControl,
+  tuneLength=50
+)
+tree2
+# Predecir el precio
+df_test$tree_logprice2 <- predict(tree2,df_test)
+df_test <- df_test %>% 
+  st_drop_geometry()  %>%
+  mutate(pt_2=exp(tree_logprice2)) %>% 
+  mutate(pt_2=round(pt_2,-5))
+int_tree2 <- df_test %>%
+  ungroup() %>% 
+  select(property_id,pt_2) %>% 
+  rename(price=pt_2)
+write.csv(int_tree2,"intento7.csv",row.names = FALSE)
+# MAE / MAPE
+y_hat_insample7 <- predict(tree2,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample7,y_true=log(df_train$price))
+#0.2509776
+exp(0.2509776)
+#1.285281
+MAPE(y_pred=y_hat_insample7,y_true=log(df_train$price))
+#0.01238467
+
+# Mirar árboles bonitos
+p_load(rattle)
+tree2$finalModel
+fancyRpartPlot(tree2$finalModel)
+
+## Arbol 3 (100) ----
+ls(df_train)
+tree3 <- train(
+  log(price) ~ asc_f + ext_f + factor(bano_f) + factor(bed_f) + 
+    property_type + distancia_minima_estacion_bus + 
+    distancia_minima_hospitales + 
+    distancia_minima_parque + distancia_minima_universidades,
+  data=df_train,
+  method = "rpart",
+  metric="MAE",
+  trControl = fitControl,
+  tuneLength=100
+)
+tree3
+# Predecir el precio
+df_test$tree_logprice3 <- predict(tree3,df_test)
+df_test <- df_test %>% 
+  st_drop_geometry()  %>%
+  mutate(pt_3=exp(tree_logprice3)) %>% 
+  mutate(pt_3=round(pt_3,-5))
+int_tree3 <- df_test %>%
+  ungroup() %>% 
+  select(property_id,pt_3) %>% 
+  rename(price=pt_3)
+write.csv(int_tree3,"intento8.csv",row.names = FALSE)
+# MAE / MAPE
+y_hat_insample8 <- predict(tree3,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample8,y_true=log(df_train$price))
+#0.2363406
+exp(0.2363406)
+#1.266606
+MAPE(y_pred=y_hat_insample8,y_true=log(df_train$price))
+#0.01166248
+
+# Random forest -------
+p_load("ranger")
+set.seed(2023)
+tunegrid_rf <- expand.grid(
+  min.node.size=c(10,30,50,70,100),
+  mtry=c(1,2,3), #columnas
+  splitrule=c("variance")
+)
+tree_ranger <- train(
+  log(price) ~ asc_f + ext_f + factor(bano_f) + factor(bed_f) + 
+    property_type + distancia_minima_estacion_bus + 
+    distancia_minima_hospitales + 
+    distancia_minima_parque + distancia_minima_universidades,
+  data=df_train,
+  method="ranger",
+  trControl=fitControl,
+  metric="MAE",
+  maximize=F,
+  tuneGrid=tunegrid_rf
+)
+
+
+# Mirar árboles bonitos
+p_load(rattle)
+tree3$finalModel
+fancyRpartPlot(tree3$finalModel)
+
+
+
+prp(tree$)
+
+df_train_f <- df_train %>% 
+  factor(bano_f,bed_f)
+
+ls(df_train)
 
 require("pacman")
 p_load("tidyverse", #data wrangling
