@@ -204,24 +204,55 @@ ls(db_ps)
 # area_f asc_f bano_f bed_f dep_f ext_f par_f property_type sample
 
 # Se imputan los valores area para NA tomando la media de cada muestra
+skim(db_ps)
 db <- db_ps
 db %>% select(sample,area_f) %>% tail()
 db <-  db %>% 
   group_by(sample) %>% 
-  mutate(media_area = mean(area_f,na.rm=T))
-db <-  db %>%
+  mutate(media_area = mean(area_f,na.rm=T)) %>% 
   mutate(area_f = ifelse(test = is.na(area_f)==T,
                          yes = media_area,
                          no = area_f))
+
 db %>% select(sample,area_f,media_area) %>% tail()
 skim(db)
 
-# Se elimina NA menor 1%
-db <- db %>% 
-  filter(!(is.na(asc_f)))
-db <- db %>% 
-  filter(!(is.na(bed_f)))
-
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(med_asc = median(asc_f,na.rm=T)) %>% 
+  mutate(asc_f = ifelse(test = is.na(asc_f)==T,
+                         yes = med_asc,
+                         no = asc_f))
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(med_bed = median(bed_f,na.rm=T)) %>% 
+  mutate(bed_f = ifelse(test = is.na(bed_f)==T,
+                        yes = med_bed,
+                        no = bed_f))
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(med_dep = median(dep_f,na.rm=T)) %>% 
+  mutate(dep_f = ifelse(test = is.na(dep_f)==T,
+                        yes = med_dep,
+                        no = dep_f))
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(med_bano = median(bano_f,na.rm=T)) %>% 
+  mutate(bano_f = ifelse(test = is.na(bano_f)==T,
+                        yes = med_bano,
+                        no = bano_f))
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(med_ext = median(ext_f,na.rm=T)) %>% 
+  mutate(ext_f = ifelse(test = is.na(ext_f)==T,
+                         yes = med_ext,
+                         no = ext_f))
+db <-  db %>% 
+  group_by(sample) %>% 
+  mutate(med_par = median(par_f,na.rm=T)) %>% 
+  mutate(par_f = ifelse(test = is.na(par_f)==T,
+                         yes = med_par,
+                         no = par_f))
 db_ps <- db
 
 # Cargar mapas ------------------------------------------------------------
@@ -371,7 +402,7 @@ ls(db_ps)
 
 ## Base final para análisis --------
 data_final<-db_ps %>%
-  select(price, area_f, asc_f, bano_f, bed_f, dep_f, par_f, ext_f, property_type,
+  select(property_id, price, area_f, asc_f, bano_f, bed_f, dep_f, par_f, ext_f, property_type,
          distancia_minima_estacion_bus, distancia_minima_hospitales,
          distancia_minima_parque, distancia_minima_universidades, sample,
          geometry)
@@ -389,9 +420,19 @@ upz_df <- st_join(df_sf,upz,join=st_within)
 glimpse(upz_df)
 ls(upz_df)
 skim(upz_df)
+write_csv2(upz_df,"upz.csv")
+faltantes <- read.csv2("upz_FALTANTES.csv",header = T)
+ls(upz_df)
+ls(faltantes)
+upz_df1 <- full_join(upz_df,faltantes,"property_id")
+head(upz_df1)
+ls(upz_df1)
+upz_df1 <- upz_df1 %>% 
+  mutate(ifelse(is.na(nom_upz.x),nom_upz.y,nom_upz.x))
 
 # Se eliminan observaciones que pueden ubicarse en UPZ
 upz_df <- upz_df %>% 
+  group_by(sample)
   filter(!is.na(cod_loc))
 
 # Buffer ------------------------------------------------------------------
@@ -433,6 +474,23 @@ EN_tp<-train(log(price) ~ area_f + bano_f + bed_f + property_type +
              tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
                                     lambda = seq(0.001,0.2,length.out = 50))
 )
+
+EN_tp
+EN_tp$bestTune
+df_test$log_price_hat1 <- predict(EN_tp,newdata=df_test)
+head(df_test %>% select(log_price_hat1) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_hat1=exp(log_price_hat1)) %>% 
+  mutate(price_hat1=round(price_hat1,-5))
+head(df_test %>% select(log_price_hat1,price_hat1) %>% st_drop_geometry())
+
+intento1 <- df_test %>% 
+  select(property_id,price_hat1) %>% 
+  rename(price=price_hat1) %>% 
+  st_drop_geometry()
+write.csv(intento1,"intento1.csv",row.names = FALSE)
+
+
 
 require("pacman")
 p_load("tidyverse", #data wrangling
