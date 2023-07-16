@@ -494,7 +494,7 @@ intento0 <- df_test %>%
   select(property_id,price_hat0) %>% 
   rename(price=price_hat0) %>% 
   st_drop_geometry()
-write.csv(intento0,"intento0.csv",row.names = FALSE)
+write.csv(intento0,"../stores/intento0.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
 y_hat_insample0 <- predict(reg0,df_train)
@@ -530,7 +530,7 @@ intento1 <- df_test %>%
   select(property_id,price_hat1) %>% 
   rename(price=price_hat1) %>% 
   st_drop_geometry()
-write.csv(intento1,"intento1.csv",row.names = FALSE)
+write.csv(intento1,"../stores/intento1.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
 y_hat_insample1 <- predict(EN_tp,df_train)
@@ -561,7 +561,7 @@ intento2 <- df_test %>%
   select(property_id,price_hat2) %>% 
   rename(price=price_hat2) %>% 
   st_drop_geometry()
-write.csv(intento2,"intento2.csv",row.names = FALSE)
+write.csv(intento2,"../stores/intento2.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
 y_hat_insample2 <- predict(reg,df_train)
@@ -597,7 +597,7 @@ intento3 <- df_test %>%
   select(property_id,price_hat3) %>% 
   rename(price=price_hat3) %>% 
   st_drop_geometry()
-write.csv(intento3,"intento3.csv",row.names = FALSE)
+write.csv(intento3,"../stores/intento3.csv",row.names = FALSE)
 # Calcular MAE MAPE
 y_hat_insample3 <- predict(EN_tp0,df_train)
 p_load(MLmetrics)
@@ -626,7 +626,7 @@ intento4 <- df_test %>%
   select(property_id,price_hat4) %>% 
   rename(price=price_hat4) %>% 
   st_drop_geometry()
-write.csv(intento4,"intento4.csv",row.names = FALSE)
+write.csv(intento4,"../stores/intento4.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
 y_hat_insample4 <- predict(reg4,df_train)
@@ -657,7 +657,7 @@ intento5 <- df_test %>%
   select(property_id,price_hat5) %>% 
   rename(price=price_hat5) %>% 
   st_drop_geometry()
-write.csv(intento5,"intento5.csv",row.names = FALSE)
+write.csv(intento5,"../stores/intento5.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
 y_hat_insample5 <- predict(reg5,df_train)
@@ -700,7 +700,7 @@ int_tree1 <- df_test %>%
   ungroup() %>% 
   select(property_id,pt_1) %>% 
   rename(price=pt_1)
-write.csv(int_tree1,"intento6.csv",row.names = FALSE)
+write.csv(int_tree1,"../stores/intento6.csv",row.names = FALSE)
 # MAE / MAPE
 y_hat_insample6 <- predict(tree,df_train)
 p_load(MLmetrics)
@@ -740,7 +740,7 @@ int_tree2 <- df_test %>%
   ungroup() %>% 
   select(property_id,pt_2) %>% 
   rename(price=pt_2)
-write.csv(int_tree2,"intento7.csv",row.names = FALSE)
+write.csv(int_tree2,"../stores/intento7.csv",row.names = FALSE)
 # MAE / MAPE
 y_hat_insample7 <- predict(tree2,df_train)
 p_load(MLmetrics)
@@ -780,7 +780,7 @@ int_tree3 <- df_test %>%
   ungroup() %>% 
   select(property_id,pt_3) %>% 
   rename(price=pt_3)
-write.csv(int_tree3,"intento8.csv",row.names = FALSE)
+write.csv(int_tree3,"../stores/intento8.csv",row.names = FALSE)
 # MAE / MAPE
 y_hat_insample8 <- predict(tree3,df_train)
 p_load(MLmetrics)
@@ -825,7 +825,7 @@ int_random <- df_test %>%
   ungroup() %>% 
   select(property_id,random) %>% 
   rename(price=random)
-write.csv(int_random,"intento9.csv",row.names = FALSE)
+write.csv(int_random,"../stores/intento9.csv",row.names = FALSE)
 # MAE / MAPE
 y_hat_insample9 <- predict(tree_ranger,df_train)
 p_load(MLmetrics)
@@ -862,7 +862,7 @@ intento10 <- df_test %>%
   select(property_id,price_ENf) %>% 
   rename(price=price_ENf) %>% 
   st_drop_geometry()
-write.csv(intento10,"intento10.csv",row.names = FALSE)
+write.csv(intento10,"../stores/intento10.csv",row.names = FALSE)
 # Calcular MAE MAPE
 y_hat_insample10 <- predict(EN_tpf,df_train)
 p_load(MLmetrics)
