@@ -876,7 +876,9 @@ MAPE(y_pred=y_hat_insample10,y_true=log(df_train$price))
 # Descriptiva ----------
 data <- upz_df %>% 
   st_drop_geometry() %>% 
-  as.tibble()
+  as.tibble() %>% 
+  mutate(bed_f=as.factor(bed_f)) %>% 
+  mutate(bano_f=as.factor(bano_f))
 des_var <- data %>% 
   dplyr::group_by(sample) %>% 
   skim()
@@ -888,4 +890,15 @@ names(data)
 data <- data %>% 
   group_by(sample)
 ggpairs(data,columns=c(3,11,12,13,14),ggplot2::aes(colour=sample))
-ggplot(data$price)
+ggplot(data,aes(x=price)) +
+  geom_area(stat="bin",fill="grey") + 
+  theme_bw() +
+  labs(x="Precio del predio (train)",y="Cantidad")
+
+# Variables discretas
+ggplot(data,aes(colour=sample,x=bano_f)) +
+  geom_bar(fill="grey") + 
+  labs(x="Número de baños (train/test)",y="Cantidad")
+ggplot(data,aes(colour=sample,x=bed_f)) +
+  geom_bar(fill="grey") + 
+  labs(x="Número de habitaciones (train/test)",y="Cantidad")
