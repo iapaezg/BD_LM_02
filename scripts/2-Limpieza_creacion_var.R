@@ -623,7 +623,7 @@ MAPE(y_pred=y_hat_insample3,y_true=log(df_train$price))
 #0.01468722
 
 # Model 4 --------
-reg4 <- lm(log(price) ~ ext_f + bano_f + bed_f + property_type + 
+reg4 <- lm(log(price) ~ asc_f + ext_f + bano_f + bed_f + property_type + 
             distancia_minima_estacion_bus + distancia_minima_hospitales + 
             distancia_minima_parque + distancia_minima_universidades,
           data=df_train)
@@ -640,7 +640,7 @@ intento4 <- df_test %>%
   select(property_id,price_hat4) %>% 
   rename(price=price_hat4) %>% 
   st_drop_geometry()
-write.csv(intento4,"intento5.csv",row.names = FALSE)
+write.csv(intento4,"intento4.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
 y_hat_insample4 <- predict(reg4,df_train)
