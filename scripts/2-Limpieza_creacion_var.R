@@ -810,7 +810,7 @@ p_load("ranger")
 set.seed(2023)
 tunegrid_rf <- expand.grid(
   min.node.size=c(10,30,50,70,100),
-  mtry=c(1,2,3), #columnas
+  mtry=c(2,4,6), #columnas
   splitrule=c("variance")
 )
 tree_ranger <- train(
@@ -825,16 +825,33 @@ tree_ranger <- train(
   maximize=F,
   tuneGrid=tunegrid_rf
 )
+tree_ranger
+plot(tree_ranger)
+tree_ranger$finalModel
+
+# Predecir el precio
+df_test$ran_log <- predict(tree_ranger,df_test)
+df_test <- df_test %>% 
+  st_drop_geometry()  %>%
+  mutate(random=exp(ran_log)) %>% 
+  mutate(random=round(random,-5))
+int_random <- df_test %>%
+  ungroup() %>% 
+  select(property_id,random) %>% 
+  rename(price=random)
+write.csv(int_random,"intento9.csv",row.names = FALSE)
+# MAE / MAPE
+y_hat_insample9 <- predict(tree_ranger,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample9,y_true=log(df_train$price))
+#0.1982735
+exp(0.1982735)
+#1.219296
+MAPE(y_pred=y_hat_insample9,y_true=log(df_train$price))
+#0.00978447
 
 
-# Mirar árboles bonitos
-p_load(rattle)
-tree3$finalModel
-fancyRpartPlot(tree3$finalModel)
 
-
-
-prp(tree$)
 
 df_train_f <- df_train %>% 
   factor(bano_f,bed_f)
