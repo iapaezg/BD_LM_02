@@ -420,20 +420,29 @@ upz_df <- st_join(df_sf,upz,join=st_within)
 glimpse(upz_df)
 ls(upz_df)
 skim(upz_df)
-write_csv2(upz_df,"upz.csv")
-faltantes <- read.csv2("upz_FALTANTES.csv",header = T)
+#write_csv2(upz_df,"../stores/upz.csv")
+faltantes <- read.csv2("../stores/upz_FALTANTES.csv",header = T)
 ls(upz_df)
 ls(faltantes)
 upz_df1 <- full_join(upz_df,faltantes,"property_id")
 head(upz_df1)
 ls(upz_df1)
 upz_df1 <- upz_df1 %>% 
-  mutate(ifelse(is.na(nom_upz.x),nom_upz.y,nom_upz.x))
+  mutate(nom_upz.x=ifelse(is.na(nom_upz.x),nom_upz.y,nom_upz.x)) %>% 
+  select(-c(sample.y,nom_upz.y)) %>% 
+  rename(sample=sample.x) %>% 
+  rename(nom_upz=nom_upz.x) %>% 
+  filter(!is.na(sample))
+upz_df <- upz_df1
+skim(upz_df)
 
-# Se eliminan observaciones que pueden ubicarse en UPZ
+# Se eliminan observaciones sin UPZ en el train
 upz_df <- upz_df %>% 
-  group_by(sample)
-  filter(!is.na(cod_loc))
+  group_by(sample) %>% 
+  filter(!is.na(nom_upz)) %>% 
+  select(-c(cod_loc,area_urbana,poblacion_u,densidad_ur,cod_upz,nomb_loc))
+
+table(upz_df$nom_upz) # Verificar UPZ
 
 # Buffer ------------------------------------------------------------------
 # Se desarrollará LLOCV por UPZ
@@ -464,6 +473,54 @@ fitControl_tp<-trainControl(method ="cv",
                             number=5)
 ls(df_train)
 skim(df_train)
+
+## Cambiar el tipo de variable PENDIENTE
+ls(df_train)
+as_factor(c(df_train$bano_f,df_train$dep_f,df_train$bed_f,df_train$asc_f,
+          df_train$par_f,df_train$ext_f))
+skim(df_train)
+
+as_character(df_train$bano_f)
+
+(c(bano_f,dep_f,par_f,asc_f,bed_f,ext_f))
+
+
+df_train <- df_train %>% 
+  st_drop_geometry()
+
+
+## Modelo 0 --------
+
+reg0 <- lm(log(price) ~ area_f + bano_f + bed_f + property_type + 
+            distancia_minima_estacion_bus + distancia_minima_hospitales + 
+            distancia_minima_parque + distancia_minima_universidades,
+          data=df_train)
+stargazer(reg,type="text")
+str(reg0)
+df_test$log_price_hat0 <- predict(reg0,newdata=df_test)
+head(df_test %>% select(log_price_hat0) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_hat0=exp(log_price_hat0)) %>% 
+  mutate(price_hat0=round(price_hat0,-5))
+head(df_test %>% select(log_price_hat0,price_hat0) %>% st_drop_geometry())
+
+intento0 <- df_test %>% 
+  select(property_id,price_hat0) %>% 
+  rename(price=price_hat0) %>% 
+  st_drop_geometry()
+write.csv(intento0,"intento0.csv",row.names = FALSE)
+
+# Calcular MAE MAPE
+y_hat_insample0 <- predict(reg,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample0,y_true=log(df_train$price))
+#0.2997065
+exp(0.2997065)
+#1.349463
+MAPE(y_pred=y_hat_insample0,y_true=log(df_train$price))
+#0.01478867
+
+#Modelo1 -------
 EN_tp<-train(log(price) ~ area_f + bano_f + bed_f + property_type + 
                distancia_minima_estacion_bus + distancia_minima_hospitales + 
                distancia_minima_parque + distancia_minima_universidades,
@@ -474,7 +531,6 @@ EN_tp<-train(log(price) ~ area_f + bano_f + bed_f + property_type +
              tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
                                     lambda = seq(0.001,0.2,length.out = 50))
 )
-
 EN_tp
 EN_tp$bestTune
 df_test$log_price_hat1 <- predict(EN_tp,newdata=df_test)
@@ -490,6 +546,111 @@ intento1 <- df_test %>%
   st_drop_geometry()
 write.csv(intento1,"intento1.csv",row.names = FALSE)
 
+# Calcular MAE MAPE
+y_hat_insample1 <- predict(EN_tp,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample1,y_true=log(df_train$price))
+#0.3000676
+exp(0.3000676)
+#1.34995
+MAPE(y_pred=y_hat_insample1,y_true=log(df_train$price))
+#0.01480671
+
+
+# MODELO 2 ------
+reg <- lm(log(price) ~ par_f + ext_f + bano_f + bed_f + property_type + 
+            distancia_minima_estacion_bus + distancia_minima_hospitales + 
+            distancia_minima_parque + distancia_minima_universidades,
+          data=df_train)
+stargazer(reg,type="text")
+str(reg)
+df_test$log_price_hat2 <- predict(reg,newdata=df_test)
+head(df_test %>% select(log_price_hat2) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_hat2=exp(log_price_hat2)) %>% 
+  mutate(price_hat2=round(price_hat2,-5))
+head(df_test %>% select(log_price_hat2,price_hat2) %>% st_drop_geometry())
+
+intento2 <- df_test %>% 
+  select(property_id,price_hat2) %>% 
+  rename(price=price_hat2) %>% 
+  st_drop_geometry()
+write.csv(intento2,"intento2.csv",row.names = FALSE)
+
+# Calcular MAE MAPE
+y_hat_insample2 <- predict(reg,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample2,y_true=log(df_train$price))
+#0.2973535
+exp(0.2973535)
+#1.346291
+MAPE(y_pred=y_hat_insample2,y_true=log(df_train$price))
+#0.01467218
+
+#Modelo3-----
+EN_tp0<-train(log(price) ~ par_f + ext_f + bano_f + bed_f + property_type + 
+               distancia_minima_estacion_bus + distancia_minima_hospitales + 
+               distancia_minima_parque + distancia_minima_universidades,
+             data=df_train,
+             method = 'glmnet', 
+             trControl = fitControl_tp,
+             metric="MAE",
+             tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
+                                    lambda = seq(0.001,0.2,length.out = 50))
+)
+EN_tp0
+EN_tp0$bestTune
+df_test$log_price_hat3 <- predict(EN_tp0,newdata=df_test)
+head(df_test %>% select(log_price_hat3) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_hat3=exp(log_price_hat3)) %>% 
+  mutate(price_hat3=round(price_hat3,-5))
+head(df_test %>% select(log_price_hat3,price_hat3) %>% st_drop_geometry())
+
+intento3 <- df_test %>% 
+  select(property_id,price_hat3) %>% 
+  rename(price=price_hat3) %>% 
+  st_drop_geometry()
+write.csv(intento3,"intento3.csv",row.names = FALSE)
+# Calcular MAE MAPE
+y_hat_insample3 <- predict(EN_tp0,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample3,y_true=log(df_train$price))
+#0.2976548
+exp(0.2976548)
+#1.346697
+MAPE(y_pred=y_hat_insample3,y_true=log(df_train$price))
+#0.01468722
+
+# Model 4 --------
+reg4 <- lm(log(price) ~ ext_f + bano_f + bed_f + property_type + 
+            distancia_minima_estacion_bus + distancia_minima_hospitales + 
+            distancia_minima_parque + distancia_minima_universidades,
+          data=df_train)
+stargazer(reg4,type="text")
+str(reg4)
+df_test$log_price_hat4 <- predict(reg4,newdata=df_test)
+head(df_test %>% select(log_price_hat4) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_hat4=exp(log_price_hat4)) %>% 
+  mutate(price_hat4=round(price_hat4,-5))
+head(df_test %>% select(log_price_hat4,price_hat4) %>% st_drop_geometry())
+
+intento4 <- df_test %>% 
+  select(property_id,price_hat4) %>% 
+  rename(price=price_hat4) %>% 
+  st_drop_geometry()
+write.csv(intento4,"intento5.csv",row.names = FALSE)
+
+# Calcular MAE MAPE
+y_hat_insample4 <- predict(reg4,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample4,y_true=log(df_train$price))
+#0.2964306
+exp(0.2964306)
+#1.345049
+MAPE(y_pred=y_hat_insample4,y_true=log(df_train$price))
+#0.01462549
 
 
 require("pacman")
@@ -499,6 +660,7 @@ p_load("tidyverse", #data wrangling
        "stargazer", #tidy regression results,
        "sf", #handling spatial data
        "spatialsample") #spatial CV
+
 
 modelo_1_sf <- todos_upz
 
