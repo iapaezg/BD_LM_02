@@ -475,7 +475,7 @@ ls(df_train)
 skim(df_train)
 
 
-## Modelo 0 --------
+# Modelo 0 --------
 
 reg0 <- lm(log(price) ~ area_f + bano_f + bed_f + property_type + 
             distancia_minima_estacion_bus + distancia_minima_hospitales + 
@@ -873,3 +873,19 @@ exp(0.2662445)
 MAPE(y_pred=y_hat_insample10,y_true=log(df_train$price))
 #0.01313765
 
+# Descriptiva ----------
+data <- upz_df %>% 
+  st_drop_geometry() %>% 
+  as.tibble()
+des_var <- data %>% 
+  dplyr::group_by(sample) %>% 
+  skim()
+
+write_csv(des_var,file="../views/descriptiva.csv")
+
+p_load(GGally,ggplot2)
+names(data)
+data <- data %>% 
+  group_by(sample)
+ggpairs(data,columns=c(3,11,12,13,14),ggplot2::aes(colour=sample))
+ggplot(data$price)
