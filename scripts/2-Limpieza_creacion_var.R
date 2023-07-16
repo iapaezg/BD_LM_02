@@ -850,84 +850,40 @@ exp(0.1982735)
 MAPE(y_pred=y_hat_insample9,y_true=log(df_train$price))
 #0.00978447
 
+# Modelo final EN
+EN_tpf<-train(log(price) ~ asc_f + ext_f + factor(bano_f) + factor(bed_f) + 
+                property_type + distancia_minima_estacion_bus + 
+                distancia_minima_hospitales + 
+                distancia_minima_parque + distancia_minima_universidades,
+              data=df_train,
+              method = 'glmnet', 
+              trControl = fitControl_tp,
+              metric="MAE",
+              tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
+                                     lambda = seq(0.001,0.2,length.out = 50))
+)
+EN_tpf
+EN_tpf$bestTune
+df_test$log_price_ENf <- predict(EN_tpf,newdata=df_test)
+head(df_test %>% select(log_price_ENf) %>% st_drop_geometry())
+df_test <- df_test %>% 
+  mutate(price_ENf=exp(log_price_ENf)) %>% 
+  mutate(price_ENf=round(price_ENf,-5))
+head(df_test %>% select(log_price_ENf,price_ENf) %>% st_drop_geometry())
 
-
-
-df_train_f <- df_train %>% 
-  factor(bano_f,bed_f)
-
-ls(df_train)
-
-require("pacman")
-p_load("tidyverse", #data wrangling
-       "modeldata", # package with the housing data from Ames, Iowa
-       "vtable", #descriptive stats package
-       "stargazer", #tidy regression results,
-       "sf", #handling spatial data
-       "spatialsample") #spatial CV
-
-
-modelo_1_sf <- todos_upz
-
-reg1 <-lm(log(price) ~ area_f + asc_f + bano_f + bed_f + dep_f + par_f + ext_f + property_type + distancia_minima_estacion_bus + distancia_minima_hospitales + distancia_minima_parque + distancia_minima_universidades, data = modelo_1)
-stargazer(reg1,type="text")
-
-#Correccion de la correlacion espacial
-
-test<- modelo_1_sf  %>% filter(sample=="test")
-train<-modelo_1_sf  %>% filter(sample=="train")
-
-
-# CrossValidation ---------------------------------------------------------
-
-set.seed(123)
-location_folds_train <- 
-  spatial_leave_location_out_cv(
-    train,
-    group = train$nom_upz
-  )
-
-autoplot(location_folds_train)
-
-folds_train<-list()
-for(i in 1:length(location_folds_train$splits)){
-  folds_train[[i]]<- location_folds_train
-in_id
-}
-
-
-fitControl_tp<-trainControl(method ="cv",
-                         number=5)
-
-#Implementacion de elastic net
-EN_tp<-train(reg1,
-		 data=modelo_1_sf,
-             method = 'glmnet', 
-             trControl = fitControl_tp,
-             metric="MAE",
-             tuneGrid = expand.grid(alpha =seq(0,1,length.out = 20),
-                                    lambda = seq(0.001,0.2,length.out = 50))
-              ) 
-
-#Creacion de buffers a traves de cv
-set.seed(123)
-buffer_folds <- spatial_buffer_vfold_cv(modelo_1_sf, radius=40,buffer=5)
-
-autoplot(buffer_folds)
-
-
-
-
-
-# Distancia del centro internacional
-p_load("tmaptools") #needs to install p_load("geojsonio")
-cbd <- geocode_OSM("Centro Internacional, Bogotá", as.sf=T) 
-cbd
-
-db_ps$DCBD<-st_distance(x = db_ps, y = cbd)
-str(db_ps)
-db_ps  %>% st_drop_geometry() %>% group_by(sample)  %>% summarize(mean(DCBD))
-
-head(db_ps)
-summary(db_ps$DCBD)
+intento10 <- df_test %>% 
+  ungroup() %>% 
+  select(property_id,price_ENf) %>% 
+  rename(price=price_ENf) %>% 
+  st_drop_geometry()
+write.csv(intento10,"intento10.csv",row.names = FALSE)
+# Calcular MAE MAPE
+y_hat_insample10 <- predict(EN_tpf,df_train)
+p_load(MLmetrics)
+MAE(y_pred=y_hat_insample10,y_true=log(df_train$price))
+#0.2662445
+exp(0.2662445)
+#1.305054
+MAPE(y_pred=y_hat_insample10,y_true=log(df_train$price))
+#0.01313765
 
