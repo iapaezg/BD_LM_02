@@ -474,20 +474,6 @@ fitControl_tp<-trainControl(method ="cv",
 ls(df_train)
 skim(df_train)
 
-## Cambiar el tipo de variable PENDIENTE
-ls(df_train)
-as_factor(c(df_train$bano_f,df_train$dep_f,df_train$bed_f,df_train$asc_f,
-          df_train$par_f,df_train$ext_f))
-skim(df_train)
-
-as_character(df_train$bano_f)
-
-(c(bano_f,dep_f,par_f,asc_f,bed_f,ext_f))
-
-
-df_train <- df_train %>% 
-  st_drop_geometry()
-
 
 ## Modelo 0 --------
 
@@ -495,7 +481,7 @@ reg0 <- lm(log(price) ~ area_f + bano_f + bed_f + property_type +
             distancia_minima_estacion_bus + distancia_minima_hospitales + 
             distancia_minima_parque + distancia_minima_universidades,
           data=df_train)
-stargazer(reg,type="text")
+stargazer(reg0,type="text")
 str(reg0)
 df_test$log_price_hat0 <- predict(reg0,newdata=df_test)
 head(df_test %>% select(log_price_hat0) %>% st_drop_geometry())
@@ -511,7 +497,7 @@ intento0 <- df_test %>%
 write.csv(intento0,"intento0.csv",row.names = FALSE)
 
 # Calcular MAE MAPE
-y_hat_insample0 <- predict(reg,df_train)
+y_hat_insample0 <- predict(reg0,df_train)
 p_load(MLmetrics)
 MAE(y_pred=y_hat_insample0,y_true=log(df_train$price))
 #0.2997065
