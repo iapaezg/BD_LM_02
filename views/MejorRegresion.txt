@@ -1,0 +1,122 @@
+
+==========================================================
+                                   Dependent variable:    
+                               ---------------------------
+                                       log(price)         
+----------------------------------------------------------
+asc_f                                   -0.083***         
+                                         (0.005)          
+                                                          
+ext_f                                   0.084***          
+                                         (0.004)          
+                                                          
+factor(bano_f)1                         -0.094***         
+                                         (0.010)          
+                                                          
+factor(bano_f)2                         -0.186***         
+                                         (0.007)          
+                                                          
+factor(bano_f)3                           0.002           
+                                         (0.007)          
+                                                          
+factor(bano_f)4                         0.192***          
+                                         (0.008)          
+                                                          
+factor(bano_f)5                         0.319***          
+                                         (0.010)          
+                                                          
+factor(bano_f)6                         0.290***          
+                                         (0.014)          
+                                                          
+factor(bano_f)7                         0.337***          
+                                         (0.024)          
+                                                          
+factor(bano_f)8                         0.346***          
+                                         (0.033)          
+                                                          
+factor(bano_f)9                         0.459***          
+                                         (0.054)          
+                                                          
+factor(bano_f)10                        0.577***          
+                                         (0.064)          
+                                                          
+factor(bano_f)11                        0.679***          
+                                         (0.139)          
+                                                          
+factor(bano_f)12                          0.106           
+                                         (0.128)          
+                                                          
+factor(bano_f)13                         0.399*           
+                                         (0.239)          
+                                                          
+factor(bano_f)14                         -0.335           
+                                         (0.338)          
+                                                          
+factor(bano_f)15                         -0.018           
+                                         (0.090)          
+                                                          
+factor(bano_f)17                          0.343           
+                                         (0.337)          
+                                                          
+factor(bano_f)19                        1.119***          
+                                         (0.338)          
+                                                          
+factor(bed_f)1                           -0.278           
+                                         (0.195)          
+                                                          
+factor(bed_f)2                           -0.073           
+                                         (0.195)          
+                                                          
+factor(bed_f)3                            0.091           
+                                         (0.195)          
+                                                          
+factor(bed_f)4                            0.190           
+                                         (0.195)          
+                                                          
+factor(bed_f)5                            0.138           
+                                         (0.195)          
+                                                          
+factor(bed_f)6                            0.118           
+                                         (0.195)          
+                                                          
+factor(bed_f)7                            0.010           
+                                         (0.195)          
+                                                          
+factor(bed_f)8                           -0.004           
+                                         (0.196)          
+                                                          
+factor(bed_f)9                           -0.045           
+                                         (0.196)          
+                                                          
+factor(bed_f)10                           0.020           
+                                         (0.196)          
+                                                          
+factor(bed_f)11                           0.026           
+                                         (0.198)          
+                                                          
+property_typeCasa                       0.064***          
+                                         (0.006)          
+                                                          
+distancia_minima_estacion_bus          -0.0001***         
+                                        (0.00001)         
+                                                          
+distancia_minima_hospitales            -0.0001***         
+                                        (0.00000)         
+                                                          
+distancia_minima_parque                 0.0002***         
+                                        (0.00001)         
+                                                          
+distancia_minima_universidades         -0.0001***         
+                                        (0.00000)         
+                                                          
+Constant                                20.301***         
+                                         (0.195)          
+                                                          
+----------------------------------------------------------
+Observations                             38,638           
+R2                                        0.404           
+Adjusted R2                               0.403           
+Residual Std. Error                0.337 (df = 38602)     
+F Statistic                    746.360*** (df = 35; 38602)
+==========================================================
+Note:                          *p<0.1; **p<0.05; ***p<0.01

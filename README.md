@@ -1,18 +1,7 @@
-# Problem Set Template Repository for Big Data and Machine Learning for Applied Economics
+# Taller 2. Making Money with ML? It’s all about location location location!!!"
 
-This is the template repository for the problem sets.
-
-The repo should contain at least four folders:
-
-- `document`: contains your final document in `pdf` format. Ideally, the document should pull figures and tables directly from the `views` folder. I've included a latex template I created for the Thesis Seminar. 
-- `scripts`: contains all your scripts
-- `stores`: contains all the data sets used. If files are "too big" for GitHub, include a document describing where people can access the data.
-- `views`: contains all figures and tables
-
-
-
-## Some general reminders: 
-
-- It is essential how you write up the document. Be sure to be organized and consistent in explaining your equations and findings. Make sure that there are no compilation errors.
-- Write understandable code, separating and commenting on each section. Coding, like in writing, style is critical for readability. If the code is well written, it should be self-contained. There is no need to write everything you did. I encourage you to follow the [tidyverse style guide](https://style.tidyverse.org/)
-
+Este repositorio cuenta con diversas carpetas asociadas al análisis descrito:
+- `document`: Contiene la versión final del documento en `pdf` y en formato editable `doc`format. Este documento contiene las figuras y tablas que se pueden visualizar en la carpeta `views`.
+- `scripts`: Incluye el código para realizar los estudios del taller para cada punto, de manera independiente (adquisición de la información, desarrollo de modelos).
+- `stores`: Espacio en el que se incluyen los conjuntos de datos utilizados e intentos cargados en Kaggle.
+- `views`: Aquí puede encontrar todas las figuras y tablas que se utilizan en el documento.
