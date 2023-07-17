@@ -659,6 +659,8 @@ intento5 <- df_test %>%
   st_drop_geometry()
 write.csv(intento5,"../stores/intento5.csv",row.names = FALSE)
 
+stargazer(reg5,type="text",out="../views/MejorRegresion.txt")
+
 # Calcular MAE MAPE
 y_hat_insample5 <- predict(reg5,df_train)
 p_load(MLmetrics)
@@ -713,7 +715,7 @@ MAPE(y_pred=y_hat_insample6,y_true=log(df_train$price))
 
 # Mirar árboles bonitos
 p_load(rattle)
-tree$finalModel
+tree2$finalModel
 fancyRpartPlot(tree$finalModel)
 
 ## Arbol 2 (50) ----
@@ -898,7 +900,15 @@ ggplot(data,aes(x=price)) +
 # Variables discretas
 ggplot(data,aes(colour=sample,x=bano_f)) +
   geom_bar(fill="grey") + 
-  labs(x="Número de baños (train/test)",y="Cantidad")
+  labs(x="Número de baños (train/test)",y="Cantidad")+
+  facet_wrap(~sample)
 ggplot(data,aes(colour=sample,x=bed_f)) +
   geom_bar(fill="grey") + 
-  labs(x="Número de habitaciones (train/test)",y="Cantidad")
+  labs(x="Número de habitaciones (train/test)",y="Cantidad") +
+  facet_wrap(~sample)
+
+table(data$property_type,data$sample)
+median(df_test$bano_f)
+median(df_train$bano_f)
+median(df_test$bed_f)
+median(df_train$bed_f)
